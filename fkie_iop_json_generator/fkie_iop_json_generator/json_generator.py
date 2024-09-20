@@ -66,7 +66,7 @@ def get_pkg_path(package_name):
 
 class JsonGenerator:
 
-    def __init__(self, input_path=None, output_path=None, exclude=[], verbose=False):
+    def __init__(self, input_path=None, output_path=None, typescript_path="", exclude=[], verbose=False):
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
         else:
@@ -79,6 +79,7 @@ class JsonGenerator:
         if not os.path.exists(output_path):
             os.mkdir(output_path)
         self.output_path = output_path
+        self.output_path_ts = typescript_path
 
         if input_path is None:
             input_path = get_pkg_path("fkie_iop_builder")
@@ -108,6 +109,7 @@ class JsonGenerator:
         self._message_failed = []
         self._message_ids = dict()
         self._message_doubles = []
+        self._service_uris = dict()
         # parse all files found in input_path
         for iXmlFile in sorted(self.xml_files):
             current_idx += 1
@@ -122,12 +124,36 @@ class JsonGenerator:
             logging.warning("Skipped %d message types, their name was already been parsed. Rerun with debug (-v) for details!" % (
                 len(self._message_doubles)))
         logging.info("JSON schemes written to: %s" % (output_path))
+        if self.output_path_ts:
+            if not os.path.exists(self.output_path_ts):
+                os.mkdir(self.output_path_ts)
+            # write a list with all message names and their ids
+            iop_message_ids_file = os.path.join(
+                self.output_path_ts, f"IopMessageIds.ts")
+            with open(iop_message_ids_file, 'w+') as tsf:
+                tsf.write("export const IopMessageIds = {\n")
+                for key, item in self._message_ids.items():
+                    tsf.write(f'  {item[1]}_{key}: "{key}" as const,\n')
+                tsf.write("}\n")
+            logging.info("All message names/ids written to: %s" % (iop_message_ids_file))
+            # write a list with all service names and their uris
+            iop_service_uri_file = os.path.join(
+                self.output_path_ts, f"IopServiceUris.ts")
+            with open(iop_service_uri_file, 'w+') as tsf:
+                tsf.write("export const IopServiceUris = {\n")
+                for key, item in self._service_uris.items():
+                    tsf.write(f'  {key}: "{item}" as const,\n')
+                tsf.write("}\n")
+            logging.info("All service names/ids written to: %s" % (iop_service_uri_file))
 
     def parse_jsidl_file(self, filename):
         js = self._get_doc(filename)
         self.dirname = os.path.dirname(filename)
-        logging.debug("current directory: %s" % self.dirname)
+        logging.debug(f"current directory: {self.dirname}")
         found_message_def = False
+        if js._element().name().localName() == "service_def":
+            logging.debug(f"parse service: {js.name} [{js.id}]")
+            self._service_uris[js.name] = js.id
         if hasattr(js, 'message_def'):
             found_message_def = True
             self._parse_jsidl_message_def(filename, js.message_def)
@@ -154,7 +180,7 @@ class JsonGenerator:
                     f"--- MESSAGE {counter + 1}/{len(message_def)}  ---  FILE {filename} ---")
                 jsMsg = message_def[counter]
                 self.msgIdHex = msgIdHex = jsMsg.message_id.hex()
-                jsonStruct = {'name': jsMsg.name,
+                jsonStruct = {'title': jsMsg.name,
                               'messageId': msgIdHex,
                               'isCommand': True if jsMsg.is_command else False,
                               'description': ' '.join([a.value.strip() for a in jsMsg.description.orderedContent()]),
@@ -163,16 +189,16 @@ class JsonGenerator:
                               'required': []
                               }
 
-                if jsMsg.message_id in self._message_ids:
+                if msgIdHex in self._message_ids:
                     self._message_doubles.append(
                         "%s(%s)" % (jsMsg.name, msgIdHex))
                     logging.debug(
-                        f"skip message with already parsed message: {jsMsg.name}, ID: {msgIdHex}:\n  file       : {filename},\n  first found: {self._message_ids[jsMsg.message_id]}")
+                        f"skip message with already parsed message: {jsMsg.name}, ID: {msgIdHex}:\n  file       : {filename},\n  first found: {self._message_ids[msgIdHex]}")
                     continue
 
                 self._not_parsed = []
                 self._current_msg_name = jsMsg.name
-                self._message_ids[jsMsg.message_id] = filename
+                self._message_ids[msgIdHex] = (filename, jsMsg.name)
                 logging.debug(
                     f"Parse message: {jsMsg.name}, msg_id: {msgIdHex}")
                 self._message_count += 1
@@ -205,7 +231,7 @@ class JsonGenerator:
                     for fc in js.value.orderedContent():
                         self.parse_element(fc, jsonStruct, incFile)
                 # write into the file only if no Exception occurs
-                with open(os.path.join(self.output_path, f"{jsMsg.name}.json"), 'w+') as schemeFile:
+                with open(os.path.join(self.output_path, f"{jsMsg.name}_{msgIdHex}.json"), 'w+') as schemeFile:
                     schemeFile.write(json.dumps(jsonStruct, indent=2))
             except Exception:
                 import traceback

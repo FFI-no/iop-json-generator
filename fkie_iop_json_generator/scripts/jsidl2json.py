@@ -35,6 +35,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='file_manager')
   parser.add_argument('-i', "--input_path", help='Path to folder with JSIDL-files. If empty search for fkie_iop_builder ROS package.')
   parser.add_argument('-o', "--output_path", help="path and name of the resulting JSON definitions, Default: '{cwd}/schemes'")
+  parser.add_argument('-t', "--typescript_path", help="generates additional typescript files if this path is set, Default: ''")
   parser.add_argument('-e', '--exclude', nargs='+', help='List with folder names to exclude from parsing')
   parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='Show debug output')
   parser.set_defaults(verbose=False)
@@ -45,6 +46,6 @@ if __name__ == "__main__":
   if isinstance(args.exclude, list):
     exclude = args.exclude
   try:
-    path = JsonGenerator(input_path, output_path, exclude, args.verbose)
+    path = JsonGenerator(input_path, output_path, args.typescript_path, exclude, args.verbose)
   except KeyboardInterrupt:
     sys.exit()
