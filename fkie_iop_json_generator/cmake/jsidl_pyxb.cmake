@@ -1,7 +1,7 @@
 include(CMakeParseArguments)
 
 macro(generate_jsidl_pyxb)
-    find_program(PYXBGEN_BIN pyxbgen pyxbgen-py3 .local/bin/pyxbgen pyxbgen)
+    find_program(PYXBGEN_BIN NAMES pyxbgen pyxbgen-py3 HINTS $ENV{HOME}/.local/bin)
     if (NOT ${CATKIN_DEVEL_PREFIX})
         # ros1
         if ( EXISTS ${CATKIN_DEVEL_PREFIX}/lib/python3)

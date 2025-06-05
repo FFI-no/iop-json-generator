@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.7)
 project(fkie_iop_json_generator)
 
 # Update the policy setting to avoid an error when loading the ament_cmake package
