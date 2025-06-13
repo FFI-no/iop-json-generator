@@ -109,6 +109,7 @@ class JsonGenerator:
         self._message_failed = []
         self._message_ids = dict()
         self._message_doubles = []
+        self._message_double_ids = dict()
         self._service_uris = dict()
         # parse all files found in input_path
         for iXmlFile in sorted(self.xml_files):
@@ -123,6 +124,17 @@ class JsonGenerator:
         if self._message_doubles:
             logging.warning("Skipped %d message types, their name was already been parsed. Rerun with debug (-v) for details!" % (
                 len(self._message_doubles)))
+        count_messages_with_same_id = 0
+        for key, items in self._message_double_ids.items():
+            if len(items) > 1:
+                count_messages_with_same_id +=1
+        if count_messages_with_same_id > 0:
+            logging.warning(f"Added {count_messages_with_same_id} messages with same ID but different name:")
+            for key, items in self._message_double_ids.items():
+                if len(items) > 1:
+                    logging.warning(f"  {key}:")
+                    for item in items:
+                        logging.warning(f"    - {item}:")
         logging.info("JSON schemes written to: %s" % (output_path))
         if self.output_path_ts:
             if not os.path.exists(self.output_path_ts):
@@ -132,8 +144,8 @@ class JsonGenerator:
                 self.output_path_ts, f"IopMessageIds.ts")
             with open(iop_message_ids_file, 'w+') as tsf:
                 tsf.write("export const IopMessageIds = {\n")
-                for key, item in self._message_ids.items():
-                    tsf.write(f'  {item[1]}_{key}: "{key}" as const,\n')
+                for key, _msg_filename in self._message_ids.items():
+                        tsf.write(f'  {key[1]}_{key[0]}: "{key[0]}" as const,\n')
                 tsf.write("}\n")
             logging.info("All message names/ids written to: %s" % (iop_message_ids_file))
             # write a list with all service names and their uris
@@ -189,16 +201,20 @@ class JsonGenerator:
                               'required': []
                               }
 
-                if msgIdHex in self._message_ids:
+                if (msgIdHex, jsMsg.name) in self._message_ids:
                     self._message_doubles.append(
                         "%s(%s)" % (jsMsg.name, msgIdHex))
                     logging.debug(
-                        f"skip message with already parsed message: {jsMsg.name}, ID: {msgIdHex}:\n  file       : {filename},\n  first found: {self._message_ids[msgIdHex]}")
+                        f"skip message with already parsed message: {jsMsg.name}, ID: {msgIdHex}:\n  file       : {filename},\n  first found: {self._message_ids[(msgIdHex, jsMsg.name)]}")
                     continue
 
+                if msgIdHex in self._message_double_ids:
+                    self._message_double_ids[msgIdHex].append(jsMsg.name)
+                else:
+                    self._message_double_ids[msgIdHex] = [jsMsg.name]
                 self._not_parsed = []
                 self._current_msg_name = jsMsg.name
-                self._message_ids[msgIdHex] = (filename, jsMsg.name)
+                self._message_ids[(msgIdHex, jsMsg.name)] = filename
                 logging.debug(
                     f"Parse message: {jsMsg.name}, msg_id: {msgIdHex}")
                 self._message_count += 1
