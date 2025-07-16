@@ -1,0 +1,21 @@
+name: Noetic Build
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on: [push, pull_request]
+
+jobs:
+  noetic:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:focal
+    steps:
+      - uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: noetic
+      - run: sudo pip install PyXB-X --break-system-packages -v
+      - uses: ros-tooling/action-ros-ci@v0.4
+        with:
+          target-ros1-distro: noetic

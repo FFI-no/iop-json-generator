@@ -1,4 +1,4 @@
-name: jazzy
+name: Jazzy Build
 
 permissions:
   contents: read
