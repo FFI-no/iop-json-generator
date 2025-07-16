@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os
 import sys
-from distutils.core import setup
-from distutils.command.build_py import build_py
+from setuptools import setup
+from setuptools.command.build_py import build_py
 
 package_name = 'fkie_iop_json_generator'
 scripts=['scripts/jsidl2json.py']
