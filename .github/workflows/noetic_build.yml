@@ -15,7 +15,7 @@ jobs:
       - uses: ros-tooling/setup-ros@v0.7
         with:
           required-ros-distributions: noetic
-      - run: sudo pip install PyXB-X --break-system-packages -v
+      - run: sudo pip install PyXB-X -v
       - uses: ros-tooling/action-ros-ci@v0.4
         with:
           target-ros1-distro: noetic
