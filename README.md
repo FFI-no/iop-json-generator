@@ -45,7 +45,7 @@ We use [PyXB-X](https://github.com/renalreg/PyXB-X) to generate python code for 
 pip install PyXB-X
 ```
 
-For using as ROS package you need additionally
+For using as ROS1 package you need additionally
 ```bash
 sudo apt install python3-catkin-pkg -y
 ```
@@ -74,7 +74,7 @@ Use setup.py to install the code:
 
 ```bash
 cd iop-json-generator/fkie_iop_json_generator
-python3 setup.py install --user --record installed_files.txt
+pip install . --break-system-packages
 ```
 
 The executable **jsidl2json.py** is now located in `~/.local/bin`.
@@ -82,7 +82,7 @@ The executable **jsidl2json.py** is now located in `~/.local/bin`.
 **Note:** to remove installed files call
 
 ```bash
-xargs rm -rf < installed_files.txt
+pip uninstall fkie_iop_wireshark_plugin --break-system-packages
 ```
 
 ## Generate JSON schemes
