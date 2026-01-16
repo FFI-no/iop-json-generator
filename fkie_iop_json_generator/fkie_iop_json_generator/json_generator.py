@@ -165,7 +165,10 @@ class JsonGenerator:
         found_message_def = False
         if js._element().name().localName() == "service_def":
             logging.debug(f"parse service: {js.name} [{js.id}]")
-            self._service_uris[js.name] = js.id
+            js_key = js.name
+            if js_key in self._service_uris:
+                js_key = f"{js.name}{js.id.split(":")[-2].capitalize()}"
+            self._service_uris[js_key] = js.id
         if hasattr(js, 'message_def'):
             found_message_def = True
             self._parse_jsidl_message_def(filename, js.message_def)
