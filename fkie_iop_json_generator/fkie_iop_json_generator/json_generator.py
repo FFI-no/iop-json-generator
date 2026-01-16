@@ -127,7 +127,7 @@ class JsonGenerator:
         count_messages_with_same_id = 0
         for key, items in self._message_double_ids.items():
             if len(items) > 1:
-                count_messages_with_same_id +=1
+                count_messages_with_same_id += 1
         if count_messages_with_same_id > 0:
             logging.warning(f"Added {count_messages_with_same_id} messages with same ID but different name:")
             for key, items in self._message_double_ids.items():
@@ -145,7 +145,7 @@ class JsonGenerator:
             with open(iop_message_ids_file, 'w+') as tsf:
                 tsf.write("export const IopMessageIds = {\n")
                 for key, _msg_filename in self._message_ids.items():
-                        tsf.write(f'  {key[1]}_{key[0]}: "{key[0]}" as const,\n')
+                    tsf.write(f'  {key[1]}_{key[0]}: "{key[0]}" as const,\n')
                 tsf.write("}\n")
             logging.info("All message names/ids written to: %s" % (iop_message_ids_file))
             # write a list with all service names and their uris
