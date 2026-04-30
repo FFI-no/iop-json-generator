@@ -167,7 +167,7 @@ class JsonGenerator:
             logging.debug(f"parse service: {js.name} [{js.id}]")
             js_key = js.name
             if js_key in self._service_uris:
-                js_key = f"{js.name}{js.id.split(":")[-2].capitalize()}"
+                js_key = f'{js.name}{js.id.split(":")[-2].capitalize()}'
             self._service_uris[js_key] = js.id
         if hasattr(js, 'message_def'):
             found_message_def = True
@@ -289,20 +289,24 @@ class JsonGenerator:
         return jsonSubStruct
 
     def create_complex_struct(self, jsonStruct, name, xType, optional, comment):
-        jsonSubStruct = {'type': xType,
-                         'comment': comment,
-                         'required': []
-                         }
+        jsonSubStruct = {
+            'type': xType,
+            'comment': comment,
+            'required': []
+        }
         if xType == 'array':
-            jsonSubStruct['items'] = {}
-            jsonSubStruct['items']['anyOf'] = []
+            jsonSubStruct['items'] = {'anyOf': []}
         else:
             jsonSubStruct['properties'] = {}
-            if not optional:
-                not_variant = 'isVariant' not in jsonStruct or not jsonStruct['isVariant']
-                not_array = 'type' not in jsonStruct or jsonStruct['type'] != 'array'
-                if not_variant and not_array:
-                    jsonStruct['required'].append(name)
+        # required logic
+        if not optional:
+            parent_is_variant = jsonStruct.get('isVariant', False)
+            parent_is_array = jsonStruct.get('type') == 'array'
+            if not parent_is_variant and not parent_is_array:
+                if 'required' not in jsonStruct:
+                    jsonStruct['required'] = []
+                jsonStruct['required'].append(name)
+
         self.appendStruct(jsonStruct, name, jsonSubStruct)
         return jsonSubStruct
 
