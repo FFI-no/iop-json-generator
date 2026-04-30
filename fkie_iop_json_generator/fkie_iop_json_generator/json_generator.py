@@ -399,21 +399,28 @@ class JsonGenerator:
         name = self.get_name(element)
         comment = self.get_comment(element)
         optional = self.parse_tag_optional(element)
+
         jsonSubStruct = self.create_complex_struct(
-            jsonStruct, name, 'object', optional, comment)
+            jsonStruct, name, 'object', optional, comment
+        )
+
         # read count field first
         vTag_field = element.value.orderedContent()[0]
         if vTag_field.elementDeclaration.name().localName() != "vtag_field":
             raise Exception("vtag_field should be first element in the list!")
+
         jsonSubStruct['jausType'] = vTag_field.value.field_type_unsigned
-        jsonSubStruct['minItems'] = vTag_field.value.min_count
-        jsonSubStruct['maxItems'] = vTag_field.value.max_count
+
+        # instead of minItems/maxItems own Meta-fields
+        jsonSubStruct['vtagMin'] = vTag_field.value.min_count
+        jsonSubStruct['vtagMax'] = vTag_field.value.max_count
+
         jsonSubStruct['isVariant'] = True
-        # add list elements
+
+        # add list elements (die einzelnen Varianten)
         for list_line in element.value.orderedContent():
             if list_line.elementDeclaration.name().localName() != "vtag_field":
-                self.parse_element(list_line, jsonSubStruct,
-                                   filename, depth + 1)
+                self.parse_element(list_line, jsonSubStruct, filename, depth + 1)
 
     def parse_variable_format_field(self, element, jsonStruct, filename, depth=1):
         name = self.get_name(element)
@@ -517,21 +524,30 @@ class JsonGenerator:
         name = self.get_name(element)
         comment = self.get_comment(element)
         optional = self.parse_tag_optional(element)
+
         # read count field first
         count_field = element.value.orderedContent()[0]
         if count_field.elementDeclaration.name().localName() != "count_field":
-            raise Exception(
-                "variable_length_string should contain count_field!")
+            raise Exception("variable_length_field should contain count_field!")
+
         jsonSubStruct = self.create_complex_struct(
-            jsonStruct, name, 'object', optional, comment)
-        jsonSubStruct['minLength'] = count_field.value.min_count
+            jsonStruct, name, 'object', optional, comment
+        )
+
+        # instead of minLength/maxLength own meta-fields
+        jsonSubStruct['minCount'] = count_field.value.min_count
         if count_field.value.max_count:
-            jsonSubStruct['maxLength'] = count_field.value.max_count
+            jsonSubStruct['maxCount'] = count_field.value.max_count
+
         jsonSubStruct['jausType'] = count_field.value.field_type_unsigned
         jsonSubStruct['fieldFormat'] = element.value.field_format
         jsonSubStruct['encapsulatedMessage'] = "simple"
+
         # append message ID definition
-        self._add_payload_struct(element.value.field_format, jsonSubStruct, False, comment, depth)
+        self._add_payload_struct(
+            element.value.field_format, jsonSubStruct, False, comment, depth
+        )
+
         # append generic message struct
         self.create_complex_struct(jsonSubStruct, 'payload', 'object', False, comment)
 
