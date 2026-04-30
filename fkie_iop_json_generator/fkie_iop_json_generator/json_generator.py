@@ -284,7 +284,7 @@ class JsonGenerator:
                          'comment': comment,
                          }
         self.appendStruct(jsonStruct, name, jsonSubStruct)
-        if not optional:
+        if not optional and ('isVariant' not in jsonStruct or not jsonStruct['isVariant']):
             jsonStruct['required'].append(name)
         return jsonSubStruct
 
@@ -298,9 +298,12 @@ class JsonGenerator:
             jsonSubStruct['items']['anyOf'] = []
         else:
             jsonSubStruct['properties'] = {}
+            if not optional:
+                not_variant = 'isVariant' not in jsonStruct or not jsonStruct['isVariant']
+                not_array = 'type' not in jsonStruct or jsonStruct['type'] != 'array'
+                if not_variant and not_array:
+                    jsonStruct['required'].append(name)
         self.appendStruct(jsonStruct, name, jsonSubStruct)
-        if not optional:
-            jsonStruct['required'].append(name)
         return jsonSubStruct
 
     def parse_element(self, element, jsonStruct, filename, depth=1):
@@ -393,7 +396,7 @@ class JsonGenerator:
         comment = self.get_comment(element)
         optional = self.parse_tag_optional(element)
         jsonSubStruct = self.create_complex_struct(
-            jsonStruct, name, 'array', optional, comment)
+            jsonStruct, name, 'object', optional, comment)
         # read count field first
         vTag_field = element.value.orderedContent()[0]
         if vTag_field.elementDeclaration.name().localName() != "vtag_field":
