@@ -165,7 +165,7 @@ class JsonGenerator:
         found_message_def = False
         if js._element().name().localName() == "service_def":
             logging.debug(f"parse service: {js.name} [{js.id}]")
-            js_key = js.name
+            js_key = f"{js.name}_{js.version.replace('.', '_')}"
             if js_key in self._service_uris:
                 js_key = f'{js.name}{js.id.split(":")[-2].capitalize()}'
             self._service_uris[js_key] = js.id
